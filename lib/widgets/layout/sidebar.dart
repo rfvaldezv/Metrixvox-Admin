@@ -69,18 +69,18 @@ class AdminSidebar extends StatelessWidget {
                     isActive: currentRoute.startsWith('/dashboard'),
                   ),
                   _SidebarItem(
-                  icon: Icons.desktop_windows_outlined,
-                  activeIcon: Icons.desktop_windows,
-                  label: 'Kioscos',
-                  route: '/kiosks',
-                  isActive: currentRoute.startsWith('/kiosks'),
+                    icon: Icons.desktop_windows_outlined,
+                    activeIcon: Icons.desktop_windows,
+                    label: 'Kioscos',
+                    route: '/kiosks',
+                    isActive: currentRoute.startsWith('/kiosks'),
                   ),
                   _SidebarItem(
-                  icon: Icons.assignment_outlined,
-                  activeIcon: Icons.assignment,
-                  label: 'Respuestas',
-                  route: '/responses',
-                  isActive: currentRoute.startsWith('/responses'),
+                    icon: Icons.assignment_outlined,
+                    activeIcon: Icons.assignment,
+                    label: 'Respuestas',
+                    route: '/responses',
+                    isActive: currentRoute.startsWith('/responses'),
                   ),
                   if (user?.isSuperAdmin ?? false)
                     _SidebarItem(
@@ -89,20 +89,19 @@ class AdminSidebar extends StatelessWidget {
                       label: 'Clientes',
                       route: '/tenants',
                       isActive: currentRoute.startsWith('/tenants'),
-                      enabled: false,
                     ),
-                    _SidebarItem(
+                  _SidebarItem(
                     icon: Icons.people_outline,
                     activeIcon: Icons.people,
                     label: 'Usuarios',
                     route: '/users',
                     isActive: currentRoute.startsWith('/users'),
-                    ),
+                  ),
                 ],
               ),
             ),
 
-            // Usuario + logout en el bottom
+            // Usuario en el bottom
             const Divider(color: Colors.white24, height: 1),
             Padding(
               padding: const EdgeInsets.all(16),
@@ -145,7 +144,6 @@ class _SidebarItem extends StatelessWidget {
   final String label;
   final String route;
   final bool isActive;
-  final bool enabled;
 
   const _SidebarItem({
     required this.icon,
@@ -153,7 +151,6 @@ class _SidebarItem extends StatelessWidget {
     required this.label,
     required this.route,
     required this.isActive,
-    this.enabled = true,
   });
 
   @override
@@ -164,7 +161,7 @@ class _SidebarItem extends StatelessWidget {
         color: isActive ? Colors.white.withOpacity(0.15) : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
-          onTap: enabled ? () => context.go(route) : null,
+          onTap: () => context.go(route),
           borderRadius: BorderRadius.circular(10),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -173,9 +170,7 @@ class _SidebarItem extends StatelessWidget {
                 Icon(
                   isActive ? activeIcon : icon,
                   size: 20,
-                  color: enabled
-                      ? Colors.white
-                      : Colors.white.withOpacity(0.35),
+                  color: Colors.white,
                 ),
                 const SizedBox(width: 14),
                 Text(
@@ -184,31 +179,9 @@ class _SidebarItem extends StatelessWidget {
                     fontFamily: 'Inter',
                     fontSize: 14,
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                    color: enabled
-                        ? Colors.white
-                        : Colors.white.withOpacity(0.35),
+                    color: Colors.white,
                   ),
                 ),
-                if (!enabled) ...[
-                  const Spacer(),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'pronto',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withOpacity(0.6),
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
