@@ -6,6 +6,7 @@ import 'package:metrixvox_admin/config/theme.dart';
 import 'package:metrixvox_admin/providers/auth_provider.dart';
 import 'package:metrixvox_admin/providers/tenant_provider.dart';
 import 'package:metrixvox_admin/providers/dashboard_provider.dart';
+import 'package:metrixvox_admin/providers/kiosks_provider.dart';
 
 void main() {
   runApp(
@@ -14,7 +15,8 @@ void main() {
 	    ChangeNotifierProvider(create: (_) => AuthProvider()..bootstrap()),
 	    ChangeNotifierProvider(create: (_) => TenantProvider()),
 	    ChangeNotifierProvider(create: (_) => DashboardProvider()),
-	  ],
+      ChangeNotifierProvider(create: (_) => KiosksProvider()),  // 🆕
+    	],
       child: const MetrixVoxAdminApp(),
     ),
   );

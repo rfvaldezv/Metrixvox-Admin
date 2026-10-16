@@ -69,12 +69,11 @@ class AdminSidebar extends StatelessWidget {
                     isActive: currentRoute.startsWith('/dashboard'),
                   ),
                   _SidebarItem(
-                    icon: Icons.desktop_windows_outlined,
-                    activeIcon: Icons.desktop_windows,
-                    label: 'Kioscos',
-                    route: '/kiosks',
-                    isActive: currentRoute.startsWith('/kiosks'),
-                    enabled: false,
+                  icon: Icons.desktop_windows_outlined,
+                  activeIcon: Icons.desktop_windows,
+                  label: 'Kioscos',
+                  route: '/kiosks',
+                  isActive: currentRoute.startsWith('/kiosks'),
                   ),
                   _SidebarItem(
                     icon: Icons.assignment_outlined,
