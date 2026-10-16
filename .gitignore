@@ -1,0 +1,21 @@
+﻿# Flutter/Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Archivos auxiliares
+estructura.txt
+codigo_*.txt
+lista_*.txt
+*.tmp
+
+# OS
+Thumbs.db
+.DS_Store
