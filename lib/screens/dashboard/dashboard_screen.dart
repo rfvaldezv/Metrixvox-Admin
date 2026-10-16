@@ -2,16 +2,50 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:metrixvox_admin/config/theme.dart';
 import 'package:metrixvox_admin/providers/auth_provider.dart';
+import 'package:metrixvox_admin/providers/dashboard_provider.dart';
 import 'package:metrixvox_admin/providers/tenant_provider.dart';
+import 'package:metrixvox_admin/widgets/dashboard/category_bars.dart';
+import 'package:metrixvox_admin/widgets/dashboard/kpi_card.dart';
+import 'package:metrixvox_admin/widgets/dashboard/sentiment_donut.dart';
 
-/// Pantalla del dashboard. Placeholder por ahora (FASE 4.2 lo llena).
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  String? _loadedTenantId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadIfNeeded();
+  }
+
+  void _loadIfNeeded() {
+    final auth = context.watch<AuthProvider>();
+    final tenant = context.watch<TenantProvider>().selected;
+
+    if (auth.token != null &&
+        tenant != null &&
+        tenant.tenantId != _loadedTenantId) {
+      _loadedTenantId = tenant.tenantId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<DashboardProvider>().load(
+              token: auth.token!,
+              tenantId: tenant.tenantId,
+            );
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
     final tenant = context.watch<TenantProvider>().selected;
+    final dashboard = context.watch<DashboardProvider>();
 
     return Padding(
       padding: const EdgeInsets.all(32),
@@ -19,93 +53,150 @@ class DashboardScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Encabezado
-          Text(
-            'Bienvenido, ${user?.fullName.split(' ').first ?? ''}',
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: AdminTheme.dark,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Aquí verás un resumen de tu actividad y métricas.',
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 15,
-              color: AdminTheme.gray,
-            ),
-          ),
-
-          if (tenant != null) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  Icons.business,
-                  size: 14,
-                  color: AdminTheme.indigo.withOpacity(0.7),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bienvenido, ${user?.fullName.split(' ').first ?? ''}',
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: AdminTheme.dark,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Resumen de actividad y métricas',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 15,
+                        color: AdminTheme.gray,
+                      ),
+                    ),
+                    if (tenant != null) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.business,
+                            size: 14,
+                            color: AdminTheme.indigo.withOpacity(0.7),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Cliente activo: ${tenant.name}',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: AdminTheme.indigo.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'Cliente activo: ${tenant.name}',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AdminTheme.indigo.withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+              // Botón de recarga
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                tooltip: 'Recargar métricas',
+                onPressed: dashboard.isLoading || tenant == null
+                    ? null
+                    : () {
+                        final token = context.read<AuthProvider>().token;
+                        if (token != null) {
+                          context.read<DashboardProvider>().load(
+                                token: token,
+                                tenantId: tenant.tenantId,
+                              );
+                        }
+                      },
+              ),
+            ],
+          ),
 
           const SizedBox(height: 32),
 
-          // Cards de placeholder
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 3,
-              crossAxisSpacing: 20,
-              mainAxisSpacing: 20,
-              childAspectRatio: 1.6,
+          // Error
+          if (dashboard.error != null) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AdminTheme.rose.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AdminTheme.rose.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline,
+                      color: AdminTheme.rose, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      dashboard.error!,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        color: AdminTheme.rose,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // KPIs
+          SizedBox(
+            height: 180,
+            child: Row(
               children: [
-                _PlaceholderCard(
-                  icon: Icons.desktop_windows,
-                  title: 'Kioscos activos',
-                  value: '—',
-                  color: AdminTheme.indigo,
+                Expanded(
+                  child: KpiCard(
+                    icon: Icons.assignment_turned_in,
+                    title: 'Total respuestas',
+                    value: '${dashboard.metrics?.totalResponses ?? 0}',
+                    color: AdminTheme.indigo,
+                    isLoading: dashboard.isLoading,
+                  ),
                 ),
-                _PlaceholderCard(
-                  icon: Icons.assignment_turned_in,
-                  title: 'Respuestas hoy',
-                  value: '—',
-                  color: AdminTheme.emerald,
+                const SizedBox(width: 20),
+                Expanded(
+                  child: KpiCard(
+                    icon: Icons.sentiment_satisfied,
+                    title: 'Score promedio',
+                    value:
+                        '${(dashboard.metrics?.globalScore ?? 0).toStringAsFixed(2)} / 5',
+                    color: AdminTheme.emerald,
+                    isLoading: dashboard.isLoading,
+                  ),
                 ),
-                _PlaceholderCard(
-                  icon: Icons.sentiment_satisfied,
-                  title: 'Score promedio',
-                  value: '—',
-                  color: AdminTheme.amber,
+                const SizedBox(width: 20),
+                Expanded(
+                  child: KpiCard(
+                    icon: Icons.thumb_up_outlined,
+                    title: 'Positivos',
+                    value: '${dashboard.metrics?.sentiment.positiveCount ?? 0}',
+                    color: AdminTheme.sky,
+                    isLoading: dashboard.isLoading,
+                  ),
                 ),
-                _PlaceholderCard(
-                  icon: Icons.warning_amber_rounded,
-                  title: 'Alertas pendientes',
-                  value: '—',
-                  color: AdminTheme.rose,
-                ),
-                _PlaceholderCard(
-                  icon: Icons.trending_up,
-                  title: 'Tendencia semanal',
-                  value: '—',
-                  color: AdminTheme.sky,
-                ),
-                _PlaceholderCard(
-                  icon: Icons.business,
-                  title: 'Clientes',
-                  value: '—',
-                  color: AdminTheme.purple,
+                const SizedBox(width: 20),
+                Expanded(
+                  child: KpiCard(
+                    icon: Icons.warning_amber_rounded,
+                    title: 'Alertas pendientes',
+                    value: '${dashboard.metrics?.alerts.length ?? 0}',
+                    color: AdminTheme.rose,
+                    isLoading: dashboard.isLoading,
+                  ),
                 ),
               ],
             ),
@@ -113,27 +204,29 @@ class DashboardScreen extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AdminTheme.indigo.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AdminTheme.indigo.withOpacity(0.15)),
-            ),
+          // Gráficos
+          Expanded(
             child: Row(
               children: [
-                const Icon(Icons.info_outline,
-                    color: AdminTheme.indigo, size: 24),
-                const SizedBox(width: 16),
                 Expanded(
-                  child: Text(
-                    'Próximamente (FASE 4.2): métricas reales, gráficos con fl_chart, '
-                    'últimas respuestas capturadas, y KPIs del sistema.',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      color: AdminTheme.dark,
-                    ),
+                  flex: 2,
+                  child: _ChartCard(
+                    title: 'Análisis de Sentimiento (IA)',
+                    child: dashboard.metrics == null
+                        ? const Center(child: CircularProgressIndicator())
+                        : SentimentDonut(sentiment: dashboard.metrics!.sentiment),
+                  ),
+                ),
+                const SizedBox(width: 24),
+                Expanded(
+                  flex: 3,
+                  child: _ChartCard(
+                    title: 'Rendimiento por Categoría',
+                    child: dashboard.metrics == null
+                        ? const Center(child: CircularProgressIndicator())
+                        : CategoryBars(
+                            categories: dashboard.metrics!.categories,
+                          ),
                   ),
                 ),
               ],
@@ -145,18 +238,11 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-class _PlaceholderCard extends StatelessWidget {
-  final IconData icon;
+class _ChartCard extends StatelessWidget {
   final String title;
-  final String value;
-  final Color color;
+  final Widget child;
 
-  const _PlaceholderCard({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.color,
-  });
+  const _ChartCard({required this.title, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -169,41 +255,18 @@ class _PlaceholderCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
+          Text(
+            title,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AdminTheme.dark,
             ),
-            child: Icon(icon, color: color, size: 26),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AdminTheme.gray,
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 20),
+          Expanded(child: child),
         ],
       ),
     );

@@ -5,14 +5,16 @@ import 'package:metrixvox_admin/config/router.dart';
 import 'package:metrixvox_admin/config/theme.dart';
 import 'package:metrixvox_admin/providers/auth_provider.dart';
 import 'package:metrixvox_admin/providers/tenant_provider.dart';
+import 'package:metrixvox_admin/providers/dashboard_provider.dart';
 
 void main() {
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()..bootstrap()),
-        ChangeNotifierProvider(create: (_) => TenantProvider()),
-      ],
+	MultiProvider(
+	  providers: [
+	    ChangeNotifierProvider(create: (_) => AuthProvider()..bootstrap()),
+	    ChangeNotifierProvider(create: (_) => TenantProvider()),
+	    ChangeNotifierProvider(create: (_) => DashboardProvider()),
+	  ],
       child: const MetrixVoxAdminApp(),
     ),
   );
