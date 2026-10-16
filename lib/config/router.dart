@@ -4,9 +4,10 @@ import 'package:metrixvox_admin/providers/auth_provider.dart';
 import 'package:metrixvox_admin/screens/auth/login_screen.dart';
 import 'package:metrixvox_admin/screens/dashboard/dashboard_screen.dart';
 import 'package:metrixvox_admin/screens/kiosks/kiosks_screen.dart';
+import 'package:metrixvox_admin/screens/responses/responses_screen.dart';
+import 'package:metrixvox_admin/screens/users/users_screen.dart';
 import 'package:metrixvox_admin/widgets/layout/app_shell.dart';
 
-/// Router global de la app con go_router.
 class AppRouter {
   static GoRouter build(AuthProvider auth) {
     return GoRouter(
@@ -22,10 +23,7 @@ class AppRouter {
         return null;
       },
       routes: [
-        GoRoute(
-          path: '/login',
-          builder: (_, __) => const LoginScreen(),
-        ),
+        GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
         ShellRoute(
           builder: (context, state, child) => AppShell(child: child),
           routes: [
@@ -36,6 +34,14 @@ class AppRouter {
             GoRoute(
               path: '/kiosks',
               builder: (_, __) => const KiosksScreen(),
+            ),
+            GoRoute(
+              path: '/responses',
+              builder: (_, __) => const ResponsesScreen(),
+            ),
+            GoRoute(
+              path: '/users',
+              builder: (_, __) => const UsersScreen(),
             ),
           ],
         ),

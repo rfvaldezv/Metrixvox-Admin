@@ -76,12 +76,11 @@ class AdminSidebar extends StatelessWidget {
                   isActive: currentRoute.startsWith('/kiosks'),
                   ),
                   _SidebarItem(
-                    icon: Icons.assignment_outlined,
-                    activeIcon: Icons.assignment,
-                    label: 'Respuestas',
-                    route: '/responses',
-                    isActive: currentRoute.startsWith('/responses'),
-                    enabled: false,
+                  icon: Icons.assignment_outlined,
+                  activeIcon: Icons.assignment,
+                  label: 'Respuestas',
+                  route: '/responses',
+                  isActive: currentRoute.startsWith('/responses'),
                   ),
                   if (user?.isSuperAdmin ?? false)
                     _SidebarItem(
@@ -92,14 +91,13 @@ class AdminSidebar extends StatelessWidget {
                       isActive: currentRoute.startsWith('/tenants'),
                       enabled: false,
                     ),
-                  _SidebarItem(
+                    _SidebarItem(
                     icon: Icons.people_outline,
                     activeIcon: Icons.people,
                     label: 'Usuarios',
                     route: '/users',
                     isActive: currentRoute.startsWith('/users'),
-                    enabled: false,
-                  ),
+                    ),
                 ],
               ),
             ),

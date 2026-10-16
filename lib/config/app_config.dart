@@ -17,6 +17,8 @@ class AppConfig {
   static String get adminTenants => '$apiBaseUrl/api/v1/admin/tenants';
   static String get dashboardMetrics => '$apiBaseUrl/api/v1/dashboard/metrics';
   static String get surveys => '$apiBaseUrl/api/v1/surveys';
+  static String get adminResponses => '$apiBaseUrl/api/v1/admin/responses';
+  static String get adminKiosksByUser => '$apiBaseUrl/api/v1/admin/users';
 
   // Storage keys
   static const String storageKeyToken = 'metrixvox_admin.token';
