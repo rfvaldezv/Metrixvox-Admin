@@ -4,11 +4,15 @@ import 'package:provider/provider.dart';
 import 'package:metrixvox_admin/config/router.dart';
 import 'package:metrixvox_admin/config/theme.dart';
 import 'package:metrixvox_admin/providers/auth_provider.dart';
+import 'package:metrixvox_admin/providers/tenant_provider.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => AuthProvider()..bootstrap(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()..bootstrap()),
+        ChangeNotifierProvider(create: (_) => TenantProvider()),
+      ],
       child: const MetrixVoxAdminApp(),
     ),
   );
@@ -23,6 +27,7 @@ class MetrixVoxAdminApp extends StatefulWidget {
 
 class _MetrixVoxAdminAppState extends State<MetrixVoxAdminApp> {
   late final GoRouter _router;
+  bool _tenantsLoaded = false;
 
   @override
   void initState() {
@@ -32,6 +37,18 @@ class _MetrixVoxAdminAppState extends State<MetrixVoxAdminApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Cargar tenants cuando el usuario se autentica
+    final auth = context.watch<AuthProvider>();
+
+    if (auth.isAuthenticated && !_tenantsLoaded && auth.token != null) {
+      _tenantsLoaded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<TenantProvider>().loadTenants(auth.token!);
+      });
+    } else if (!auth.isAuthenticated && _tenantsLoaded) {
+      _tenantsLoaded = false;
+    }
+
     return MaterialApp.router(
       title: 'MetrixVox Admin',
       theme: AdminTheme.light(),

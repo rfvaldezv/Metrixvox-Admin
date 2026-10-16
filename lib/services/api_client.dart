@@ -18,8 +18,11 @@ class ApiException implements Exception {
 /// Maneja el token JWT automáticamente en cada request.
 class ApiClient {
   final String? _token;
+  final String? _tenantId;
 
-  ApiClient({String? token}) : _token = token;
+  ApiClient({String? token, String? tenantId})
+      : _token = token,
+        _tenantId = tenantId;
 
   /// GET
   Future<dynamic> get(String url) async {
@@ -102,6 +105,9 @@ class ApiClient {
     };
     if (_token != null && _token!.isNotEmpty) {
       headers['Authorization'] = 'Bearer $_token';
+    }
+    if (_tenantId != null && _tenantId!.isNotEmpty) {
+      headers['X-Tenant-Id'] = _tenantId!;
     }
     return headers;
   }

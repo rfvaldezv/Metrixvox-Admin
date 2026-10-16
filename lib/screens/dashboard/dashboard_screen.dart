@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:metrixvox_admin/config/theme.dart';
 import 'package:metrixvox_admin/providers/auth_provider.dart';
+import 'package:metrixvox_admin/providers/tenant_provider.dart';
 
-/// Pantalla del dashboard. Placeholder por ahora (FASE 4 lo llena).
+/// Pantalla del dashboard. Placeholder por ahora (FASE 4.2 lo llena).
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
+    final tenant = context.watch<TenantProvider>().selected;
 
     return Padding(
       padding: const EdgeInsets.all(32),
@@ -36,16 +38,39 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
 
+          if (tenant != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  Icons.business,
+                  size: 14,
+                  color: AdminTheme.indigo.withOpacity(0.7),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Cliente activo: ${tenant.name}',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AdminTheme.indigo.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
+          ],
+
           const SizedBox(height: 32),
 
           // Cards de placeholder
-	  Expanded(
-	  child: GridView.count(
-	    crossAxisCount: 3,
-	    crossAxisSpacing: 20,
-	    mainAxisSpacing: 20,
-	    childAspectRatio: 1.6,   // 🆕 Ajusta la proporción (más ancho que alto)
-	    children: [
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 3,
+              crossAxisSpacing: 20,
+              mainAxisSpacing: 20,
+              childAspectRatio: 1.6,
+              children: [
                 _PlaceholderCard(
                   icon: Icons.desktop_windows,
                   title: 'Kioscos activos',
@@ -97,11 +122,12 @@ class DashboardScreen extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, color: AdminTheme.indigo, size: 24),
+                const Icon(Icons.info_outline,
+                    color: AdminTheme.indigo, size: 24),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    'Próximamente (FASE 4): métricas reales, gráficos con fl_chart, '
+                    'Próximamente (FASE 4.2): métricas reales, gráficos con fl_chart, '
                     'últimas respuestas capturadas, y KPIs del sistema.',
                     style: TextStyle(
                       fontFamily: 'Inter',
