@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:metrixvox_admin/config/theme.dart';
 import 'package:metrixvox_admin/providers/auth_provider.dart';
 import 'package:metrixvox_admin/services/api_client.dart';
+import 'package:metrixvox_admin/widgets/metrix_logo.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -80,34 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // Logo + título
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                gradient: AdminTheme.brandGradient,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.analytics_rounded,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'MetrixVox',
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 26,
-                                fontWeight: FontWeight.w700,
-                                color: AdminTheme.dark,
-                              ),
-                            ),
-                          ],
-                        ),
+                        const MetrixLogo(size: 48, showText: true),
                         const SizedBox(height: 8),
                         const Text(
                           'Panel de Administración',

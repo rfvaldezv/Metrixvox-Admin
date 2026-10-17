@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:metrixvox_admin/config/theme.dart';
 import 'package:metrixvox_admin/providers/auth_provider.dart';
+import 'package:metrixvox_admin/widgets/metrix_logo.dart';
 
 /// Sidebar de navegación principal.
 class AdminSidebar extends StatelessWidget {
@@ -22,35 +23,14 @@ class AdminSidebar extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Logo + título
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.analytics_rounded,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'MetrixVox',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
+          // Logo + título
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: MetrixLogo(
+              size: 32,
+              showText: true,
+              forceColor: Colors.white,
+              textColor: Colors.white,
               ),
             ),
 
