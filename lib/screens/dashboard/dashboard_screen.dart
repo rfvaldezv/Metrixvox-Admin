@@ -4,6 +4,7 @@ import 'package:metrixvox_admin/config/theme.dart';
 import 'package:metrixvox_admin/providers/auth_provider.dart';
 import 'package:metrixvox_admin/providers/dashboard_provider.dart';
 import 'package:metrixvox_admin/providers/tenant_provider.dart';
+import 'package:metrixvox_admin/services/report_service.dart';
 import 'package:metrixvox_admin/widgets/dashboard/category_bars.dart';
 import 'package:metrixvox_admin/widgets/dashboard/kpi_card.dart';
 import 'package:metrixvox_admin/widgets/dashboard/sentiment_donut.dart';
@@ -17,6 +18,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   String? _loadedTenantId;
+  bool _isExporting = false;
 
   @override
   void didChangeDependencies() {
@@ -41,6 +43,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<void> _exportReport(String tenantId) async {
+    final token = context.read<AuthProvider>().token;
+    if (token == null) return;
+
+    setState(() => _isExporting = true);
+
+    try {
+      await ReportService.downloadExecutiveReport(
+        token: token,
+        tenantId: tenantId,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Reporte descargado correctamente'),
+          backgroundColor: AdminTheme.emerald,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al generar reporte: $e'),
+          backgroundColor: AdminTheme.rose,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
@@ -52,7 +86,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Encabezado
           Row(
             children: [
               Expanded(
@@ -102,7 +135,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ),
-              // Botón de recarga
+              ElevatedButton.icon(
+                onPressed:
+                    (tenant == null || dashboard.isLoading || _isExporting)
+                        ? null
+                        : () => _exportReport(tenant.tenantId),
+                icon: _isExporting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.picture_as_pdf, size: 18),
+                label: Text(_isExporting ? 'Generando...' : 'Exportar PDF'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AdminTheme.rose,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.refresh),
                 tooltip: 'Recargar métricas',
@@ -123,7 +181,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           const SizedBox(height: 32),
 
-          // Error
           if (dashboard.error != null) ...[
             Container(
               padding: const EdgeInsets.all(16),
@@ -153,7 +210,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 20),
           ],
 
-          // KPIs
           SizedBox(
             height: 180,
             child: Row(
@@ -183,7 +239,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: KpiCard(
                     icon: Icons.thumb_up_outlined,
                     title: 'Positivos',
-                    value: '${dashboard.metrics?.sentiment.positiveCount ?? 0}',
+                    value:
+                        '${dashboard.metrics?.sentiment.positiveCount ?? 0}',
                     color: AdminTheme.sky,
                     isLoading: dashboard.isLoading,
                   ),
@@ -204,7 +261,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           const SizedBox(height: 24),
 
-          // Gráficos
           Expanded(
             child: Row(
               children: [
@@ -214,7 +270,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     title: 'Análisis de Sentimiento (IA)',
                     child: dashboard.metrics == null
                         ? const Center(child: CircularProgressIndicator())
-                        : SentimentDonut(sentiment: dashboard.metrics!.sentiment),
+                        : SentimentDonut(
+                            sentiment: dashboard.metrics!.sentiment),
                   ),
                 ),
                 const SizedBox(width: 24),
