@@ -84,6 +84,19 @@ class KiosksProvider extends ChangeNotifier {
     await load(token: token, tenantId: tenantId);
   }
 
+  /// Genera el código de vinculación para un kiosco.
+  Future<String> generatePairingCode({
+    required String token,
+    required String tenantId,
+    required String id,
+  }) async {
+    return await KioskService.generatePairingCode(
+      token: token,
+      tenantId: tenantId,
+      id: id,
+    );
+  }
+
   void clear() {
     _kiosks = [];
     _error = null;

@@ -10,6 +10,7 @@ import 'package:metrixvox_admin/screens/surveys/surveys_screen.dart';
 import 'package:metrixvox_admin/screens/tenants/tenants_screen.dart';
 import 'package:metrixvox_admin/screens/users/users_screen.dart';
 import 'package:metrixvox_admin/widgets/layout/app_shell.dart';
+import 'package:metrixvox_admin/screens/reports/reports_screen.dart';
 
 class AppRouter {
   static GoRouter build(AuthProvider auth) {
@@ -45,6 +46,10 @@ class AppRouter {
             GoRoute(path: '/responses', builder: (_, __) => const ResponsesScreen()),
             GoRoute(path: '/tenants', builder: (_, __) => const TenantsScreen()),
             GoRoute(path: '/users', builder: (_, __) => const UsersScreen()),
+            GoRoute(
+              path: '/reports',
+              builder: (context, state) => const ReportsScreen(),
+            ),
           ],
         ),
       ],

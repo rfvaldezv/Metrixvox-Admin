@@ -12,6 +12,7 @@ class AppConfig {
   static String get authRefresh => '$apiBaseUrl/api/v1/auth/refresh';
   static String get authLogout => '$apiBaseUrl/api/v1/auth/logout';
   static String get authMe => '$apiBaseUrl/api/v1/auth/me';
+  
   static String get adminKiosks => '$apiBaseUrl/api/v1/admin/kiosks';
   static String get adminUsers => '$apiBaseUrl/api/v1/admin/users';
   static String get adminTenants => '$apiBaseUrl/api/v1/admin/tenants';
@@ -19,6 +20,10 @@ class AppConfig {
   static String get surveys => '$apiBaseUrl/api/v1/surveys';
   static String get adminResponses => '$apiBaseUrl/api/v1/admin/responses';
   static String get adminKiosksByUser => '$apiBaseUrl/api/v1/admin/users';
+  
+  // NUEVOS Endpoints de Reportes
+  static String get adminAnalytics => '$apiBaseUrl/api/v1/admin/analytics';
+  static String get adminReports => '$apiBaseUrl/api/v1/admin/reports';
 
   // Storage keys
   static const String storageKeyToken = 'metrixvox_admin.token';

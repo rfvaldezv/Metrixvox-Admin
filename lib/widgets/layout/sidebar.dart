@@ -69,6 +69,13 @@ class AdminSidebar extends StatelessWidget {
                     route: '/responses',
                     isActive: currentRoute.startsWith('/responses'),
                   ),
+                  _SidebarItem(
+                    icon: Icons.analytics_outlined,
+                    activeIcon: Icons.analytics,
+                    label: 'Reportes IA',
+                    route: '/reports',
+                    isActive: currentRoute.startsWith('/reports'),
+                  ),
                   if (user?.isSuperAdmin ?? false)
                     _SidebarItem(
                       icon: Icons.business_outlined,

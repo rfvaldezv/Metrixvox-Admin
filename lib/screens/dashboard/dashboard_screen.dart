@@ -50,11 +50,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _isExporting = true);
 
     try {
-      await ReportService.downloadExecutiveReport(
-        token: token,
-        tenantId: tenantId,
-      );
-
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

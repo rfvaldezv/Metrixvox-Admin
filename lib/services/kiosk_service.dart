@@ -87,4 +87,19 @@ class KioskService {
     final api = ApiClient(token: token, tenantId: tenantId);
     await api.delete('${AppConfig.adminKiosks}/$id');
   }
+
+  /// Genera un código de vinculación (Pairing Code) para la tablet.
+  static Future<String> generatePairingCode({
+    required String token,
+    required String tenantId,
+    required String id,
+  }) async {
+    final api = ApiClient(token: token, tenantId: tenantId);
+    final json = await api.post('${AppConfig.adminKiosks}/$id/generate-pairing-code');
+    
+    if (json is Map && json['pairingCode'] != null) {
+      return json['pairingCode'] as String;
+    }
+    throw Exception('Respuesta del servidor no contiene el código de pairing.');
+  }
 }

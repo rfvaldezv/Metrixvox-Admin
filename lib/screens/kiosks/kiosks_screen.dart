@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:metrixvox_admin/config/theme.dart';
 import 'package:metrixvox_admin/models/kiosk.dart';
@@ -8,6 +7,7 @@ import 'package:metrixvox_admin/providers/kiosks_provider.dart';
 import 'package:metrixvox_admin/providers/tenant_provider.dart';
 import 'package:metrixvox_admin/screens/kiosks/kiosk_form_dialog.dart';
 import 'package:metrixvox_admin/screens/kiosks/kiosk_token_dialog.dart';
+import 'package:metrixvox_admin/screens/kiosks/kiosk_pairing_dialog.dart'; // NUEVO
 
 class KiosksScreen extends StatefulWidget {
   const KiosksScreen({super.key});
@@ -151,6 +151,29 @@ class _KiosksScreenState extends State<KiosksScreen> {
     );
   }
 
+  Future<void> _pairKiosk(Kiosk kiosk) async {
+    // Simplemente abrimos el diálogo, él se encarga de todo (loading, API, mostrar código)
+    await showDialog(
+      context: context,
+      builder: (_) => KioskPairingDialog(
+        kioskId: kiosk.id,
+        kioskName: kiosk.name,
+      ),
+    );
+
+    // Al cerrar el diálogo, recargamos la lista
+    if (mounted) {
+      final auth = context.read<AuthProvider>();
+      final tenant = context.read<TenantProvider>().selected;
+      if (auth.token != null && tenant != null) {
+        context.read<KiosksProvider>().load(
+              token: auth.token!,
+              tenantId: tenant.tenantId,
+            );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<KiosksProvider>();
@@ -254,6 +277,7 @@ class _KiosksScreenState extends State<KiosksScreen> {
                                 onEdit: () => _editKiosk(kiosk),
                                 onDelete: () => _deleteKiosk(kiosk),
                                 onShowToken: () => _showToken(kiosk),
+                                onPair: () => _pairKiosk(kiosk), // NUEVO
                               );
                             },
                           ),
@@ -269,12 +293,14 @@ class _KioskCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onShowToken;
+  final VoidCallback onPair; // NUEVO
 
   const _KioskCard({
     required this.kiosk,
     required this.onEdit,
     required this.onDelete,
     required this.onShowToken,
+    required this.onPair, // NUEVO
   });
 
   @override
@@ -343,6 +369,12 @@ class _KioskCard extends StatelessWidget {
           ),
 
           // Acciones
+          IconButton(
+            icon: const Icon(Icons.pin_outlined),
+            tooltip: 'Vincular tablet (Pairing)',
+            onPressed: onPair,
+            color: AdminTheme.indigo,
+          ),
           IconButton(
             icon: const Icon(Icons.key_outlined),
             tooltip: 'Ver token',
