@@ -55,6 +55,13 @@ class AdminSidebar extends StatelessWidget {
                     route: '/kiosks',
                     isActive: currentRoute.startsWith('/kiosks'),
                   ),
+		  _SidebarItem(
+		    icon: Icons.assignment_outlined,
+		    activeIcon: Icons.assignment,
+		    label: 'Encuestas',
+		    route: '/surveys',
+		    isActive: currentRoute.startsWith('/surveys'),
+		  ),
                   _SidebarItem(
                     icon: Icons.assignment_outlined,
                     activeIcon: Icons.assignment,

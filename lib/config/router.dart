@@ -5,9 +5,11 @@ import 'package:metrixvox_admin/screens/auth/login_screen.dart';
 import 'package:metrixvox_admin/screens/dashboard/dashboard_screen.dart';
 import 'package:metrixvox_admin/screens/kiosks/kiosks_screen.dart';
 import 'package:metrixvox_admin/screens/responses/responses_screen.dart';
+import 'package:metrixvox_admin/screens/surveys/survey_editor_screen.dart';
+import 'package:metrixvox_admin/screens/surveys/surveys_screen.dart';
+import 'package:metrixvox_admin/screens/tenants/tenants_screen.dart';
 import 'package:metrixvox_admin/screens/users/users_screen.dart';
 import 'package:metrixvox_admin/widgets/layout/app_shell.dart';
-import 'package:metrixvox_admin/screens/tenants/tenants_screen.dart';
 
 class AppRouter {
   static GoRouter build(AuthProvider auth) {
@@ -28,26 +30,21 @@ class AppRouter {
         ShellRoute(
           builder: (context, state, child) => AppShell(child: child),
           routes: [
+            GoRoute(path: '/dashboard', builder: (_, __) => const DashboardScreen()),
+            GoRoute(path: '/kiosks', builder: (_, __) => const KiosksScreen()),
+            GoRoute(path: '/surveys', builder: (_, __) => const SurveysScreen()),
             GoRoute(
-              path: '/dashboard',
-              builder: (_, __) => const DashboardScreen(),
+              path: '/surveys/new',
+              builder: (_, __) => const SurveyEditorScreen(),
             ),
             GoRoute(
-              path: '/kiosks',
-              builder: (_, __) => const KiosksScreen(),
+              path: '/surveys/:code',
+              builder: (_, state) =>
+                  SurveyEditorScreen(surveyCode: state.pathParameters['code']),
             ),
-            GoRoute(
-              path: '/responses',
-              builder: (_, __) => const ResponsesScreen(),
-            ),
-            GoRoute(
-              path: '/users',
-              builder: (_, __) => const UsersScreen(),
-            ),
-	    GoRoute(
-	    path: '/tenants',
-	    builder: (_, __) => const TenantsScreen(),
-	    ),
+            GoRoute(path: '/responses', builder: (_, __) => const ResponsesScreen()),
+            GoRoute(path: '/tenants', builder: (_, __) => const TenantsScreen()),
+            GoRoute(path: '/users', builder: (_, __) => const UsersScreen()),
           ],
         ),
       ],
