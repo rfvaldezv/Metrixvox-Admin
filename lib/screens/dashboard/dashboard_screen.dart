@@ -4,7 +4,6 @@ import 'package:metrixvox_admin/config/theme.dart';
 import 'package:metrixvox_admin/providers/auth_provider.dart';
 import 'package:metrixvox_admin/providers/dashboard_provider.dart';
 import 'package:metrixvox_admin/providers/tenant_provider.dart';
-import 'package:metrixvox_admin/services/report_service.dart';
 import 'package:metrixvox_admin/widgets/dashboard/category_bars.dart';
 import 'package:metrixvox_admin/widgets/dashboard/kpi_card.dart';
 import 'package:metrixvox_admin/widgets/dashboard/sentiment_donut.dart';
@@ -18,7 +17,6 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   String? _loadedTenantId;
-  bool _isExporting = false;
 
   @override
   void didChangeDependencies() {
@@ -29,10 +27,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _loadIfNeeded() {
     final auth = context.watch<AuthProvider>();
     final tenant = context.watch<TenantProvider>().selected;
+    final dashboard = context.watch<DashboardProvider>();
 
-    if (auth.token != null &&
-        tenant != null &&
-        tenant.tenantId != _loadedTenantId) {
+    if (dashboard.isUnauthorized && auth.isAuthenticated) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        auth.handleUnauthorized();
+      });
+      return;
+    }
+
+    if (auth.token != null && tenant != null && tenant.tenantId != _loadedTenantId) {
       _loadedTenantId = tenant.tenantId;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.read<DashboardProvider>().load(
@@ -43,40 +47,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Future<void> _exportReport(String tenantId) async {
-    final token = context.read<AuthProvider>().token;
-    if (token == null) return;
-
-    setState(() => _isExporting = true);
-
-    try {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Reporte descargado correctamente'),
-          backgroundColor: AdminTheme.emerald,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al generar reporte: $e'),
-          backgroundColor: AdminTheme.rose,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isExporting = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
-    final tenant = context.watch<TenantProvider>().selected;
     final dashboard = context.watch<DashboardProvider>();
+    final metrics = dashboard.metrics;
+    final isMobile = MediaQuery.of(context).size.width < 900;
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,238 +67,162 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     Text(
                       'Bienvenido, ${user?.fullName.split(' ').first ?? ''}',
-                      style: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: AdminTheme.dark,
-                      ),
+                      style: const TextStyle(fontFamily: 'Poppins', fontSize: 28, fontWeight: FontWeight.w700, color: AdminTheme.dark),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      'Resumen de actividad y métricas',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 15,
-                        color: AdminTheme.gray,
-                      ),
-                    ),
-                    if (tenant != null) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.business,
-                            size: 14,
-                            color: AdminTheme.indigo.withOpacity(0.7),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Cliente activo: ${tenant.name}',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: AdminTheme.indigo.withOpacity(0.8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    const Text('Resumen de actividad y métricas', style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: AdminTheme.gray)),
                   ],
                 ),
               ),
-              ElevatedButton.icon(
-                onPressed:
-                    (tenant == null || dashboard.isLoading || _isExporting)
-                        ? null
-                        : () => _exportReport(tenant.tenantId),
-                icon: _isExporting
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.picture_as_pdf, size: 18),
-                label: Text(_isExporting ? 'Generando...' : 'Exportar PDF'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AdminTheme.rose,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
               IconButton(
-                icon: const Icon(Icons.refresh),
-                tooltip: 'Recargar métricas',
-                onPressed: dashboard.isLoading || tenant == null
-                    ? null
-                    : () {
-                        final token = context.read<AuthProvider>().token;
-                        if (token != null) {
-                          context.read<DashboardProvider>().load(
-                                token: token,
-                                tenantId: tenant.tenantId,
-                              );
-                        }
-                      },
+                icon: const Icon(Icons.refresh, color: AdminTheme.indigo),
+                onPressed: () {
+                  final auth = context.read<AuthProvider>();
+                  final tenant = context.read<TenantProvider>().selected;
+                  if (auth.token != null && tenant != null) {
+                    context.read<DashboardProvider>().load(token: auth.token!, tenantId: tenant.tenantId);
+                  }
+                },
               ),
             ],
           ),
-
           const SizedBox(height: 32),
-
-          if (dashboard.error != null) ...[
+          
+          if (dashboard.isLoading)
+            const Center(child: Padding(padding: EdgeInsets.all(40.0), child: CircularProgressIndicator()))
+          else if (dashboard.error != null)
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AdminTheme.rose.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AdminTheme.rose.withOpacity(0.3)),
-              ),
-              child: Row(
+              decoration: BoxDecoration(color: AdminTheme.rose.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              child: Text(dashboard.error!, style: const TextStyle(color: AdminTheme.rose)),
+            )
+          else if (metrics != null) ...[
+            // KPIs
+            if (isMobile) ...[
+              _KpiRow(metrics: metrics),
+              const SizedBox(height: 16),
+              _KpiRow2(metrics: metrics),
+            ] else
+              Row(
                 children: [
-                  const Icon(Icons.error_outline,
-                      color: AdminTheme.rose, size: 20),
-                  const SizedBox(width: 12),
+                  Expanded(child: KpiCard(title: 'Total respuestas', value: '${metrics.totalResponses}', color: AdminTheme.indigo, icon: Icons.assignment_turned_in_outlined)),
+                  const SizedBox(width: 16),
+                  Expanded(child: KpiCard(title: 'Score promedio', value: metrics.globalScore.toStringAsFixed(2), color: AdminTheme.emerald, icon: Icons.star_outline)),
+                  const SizedBox(width: 16),
+                  Expanded(child: KpiCard(title: 'Positivos', value: '${metrics.sentiment.positiveCount}', color: AdminTheme.sky, icon: Icons.thumb_up_outlined)),
+                  const SizedBox(width: 16),
+                  Expanded(child: KpiCard(title: 'Alertas pendientes', value: '${metrics.alerts.length}', color: AdminTheme.rose, icon: Icons.warning_amber_outlined)),
+                ],
+              ),
+
+            const SizedBox(height: 32),
+
+            // Gráficos
+            if (isMobile) ...[
+              SizedBox(
+                height: 300,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AdminTheme.border)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Análisis de Sentimiento (IA)', style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 20),
+                      Expanded(child: SentimentDonut(sentiment: metrics.sentiment)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 300,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AdminTheme.border)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Rendimiento por Categoría', style: TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 20),
+                      Expanded(child: CategoryBars(categories: metrics.categories)),
+                    ],
+                  ),
+                ),
+              ),
+            ] else ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Expanded(
-                    child: Text(
-                      dashboard.error!,
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 13,
-                        color: AdminTheme.rose,
+                    flex: 1,
+                    child: SizedBox(
+                      height: 400,
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AdminTheme.border)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Análisis de Sentimiento (IA)', style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 24),
+                            Expanded(child: SentimentDonut(sentiment: metrics.sentiment)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    flex: 1,
+                    child: SizedBox(
+                      height: 400,
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AdminTheme.border)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Rendimiento por Categoría', style: TextStyle(fontFamily: 'Poppins', fontSize: 18, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 24),
+                            Expanded(child: CategoryBars(categories: metrics.categories)),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 20),
+            ],
           ],
-
-          SizedBox(
-            height: 180,
-            child: Row(
-              children: [
-                Expanded(
-                  child: KpiCard(
-                    icon: Icons.assignment_turned_in,
-                    title: 'Total respuestas',
-                    value: '${dashboard.metrics?.totalResponses ?? 0}',
-                    color: AdminTheme.indigo,
-                    isLoading: dashboard.isLoading,
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: KpiCard(
-                    icon: Icons.sentiment_satisfied,
-                    title: 'Score promedio',
-                    value:
-                        '${(dashboard.metrics?.globalScore ?? 0).toStringAsFixed(2)} / 5',
-                    color: AdminTheme.emerald,
-                    isLoading: dashboard.isLoading,
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: KpiCard(
-                    icon: Icons.thumb_up_outlined,
-                    title: 'Positivos',
-                    value:
-                        '${dashboard.metrics?.sentiment.positiveCount ?? 0}',
-                    color: AdminTheme.sky,
-                    isLoading: dashboard.isLoading,
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: KpiCard(
-                    icon: Icons.warning_amber_rounded,
-                    title: 'Alertas pendientes',
-                    value: '${dashboard.metrics?.alerts.length ?? 0}',
-                    color: AdminTheme.rose,
-                    isLoading: dashboard.isLoading,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: _ChartCard(
-                    title: 'Análisis de Sentimiento (IA)',
-                    child: dashboard.metrics == null
-                        ? const Center(child: CircularProgressIndicator())
-                        : SentimentDonut(
-                            sentiment: dashboard.metrics!.sentiment),
-                  ),
-                ),
-                const SizedBox(width: 24),
-                Expanded(
-                  flex: 3,
-                  child: _ChartCard(
-                    title: 'Rendimiento por Categoría',
-                    child: dashboard.metrics == null
-                        ? const Center(child: CircularProgressIndicator())
-                        : CategoryBars(
-                            categories: dashboard.metrics!.categories,
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
   }
 }
 
-class _ChartCard extends StatelessWidget {
-  final String title;
-  final Widget child;
-
-  const _ChartCard({required this.title, required this.child});
-
+class _KpiRow extends StatelessWidget {
+  final dynamic metrics;
+  const _KpiRow({required this.metrics});
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AdminTheme.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AdminTheme.dark,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Expanded(child: child),
-        ],
-      ),
-    );
+    return Row(children: [
+      Expanded(child: KpiCard(title: 'Total respuestas', value: '${metrics.totalResponses}', color: AdminTheme.indigo, icon: Icons.assignment_turned_in_outlined)),
+      const SizedBox(width: 16),
+      Expanded(child: KpiCard(title: 'Score promedio', value: metrics.globalScore.toStringAsFixed(2), color: AdminTheme.emerald, icon: Icons.star_outline)),
+    ]);
+  }
+}
+
+class _KpiRow2 extends StatelessWidget {
+  final dynamic metrics;
+  const _KpiRow2({required this.metrics});
+  @override
+  Widget build(BuildContext context) {
+    return Row(children: [
+      Expanded(child: KpiCard(title: 'Positivos', value: '${metrics.sentiment.positiveCount}', color: AdminTheme.sky, icon: Icons.thumb_up_outlined)),
+      const SizedBox(width: 16),
+      Expanded(child: KpiCard(title: 'Alertas pendientes', value: '${metrics.alerts.length}', color: AdminTheme.rose, icon: Icons.warning_amber_outlined)),
+    ]);
   }
 }

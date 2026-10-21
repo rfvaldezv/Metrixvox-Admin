@@ -35,7 +35,11 @@ class _UserFormDialogState extends State<UserFormDialog> {
   bool _isLoading = false;
   String? _error;
 
-  static const _roles = ['TenantAdmin', 'Analyst', 'Viewer'];
+  // Ahora los valores internos coinciden con el backend, pero mostramos labels amigables
+  static const _roles = [
+    ('TenantAdmin', 'Corporativo (Administrador)'),
+    ('Analyst', 'Analista (Solo lectura)'),
+  ];
 
   @override
   void initState() {
@@ -43,8 +47,9 @@ class _UserFormDialogState extends State<UserFormDialog> {
     _emailController = TextEditingController(text: widget.user?.email ?? '');
     _passwordController = TextEditingController();
     _nameController = TextEditingController(text: widget.user?.fullName ?? '');
-    _role = widget.user?.role ?? 'Analyst';
-    if (_role == 'SuperAdmin') _role = 'TenantAdmin';
+    
+    // Si el usuario actual es SuperAdmin, no debería poder editarse aquí
+    _role = widget.user?.role == 'TenantAdmin' ? 'TenantAdmin' : 'Analyst';
     _isActive = widget.user?.isActive ?? true;
   }
 
@@ -118,8 +123,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
                   labelText: 'Nombre completo',
                   prefixIcon: Icon(Icons.person_outline),
                 ),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Requerido' : null,
+                validator: (v) => v == null || v.trim().isEmpty ? 'Requerido' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -159,7 +163,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
                   prefixIcon: Icon(Icons.admin_panel_settings_outlined),
                 ),
                 items: _roles
-                    .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                    .map((r) => DropdownMenuItem(value: r.$1, child: Text(r.$2)))
                     .toList(),
                 onChanged: (v) => setState(() => _role = v ?? 'Analyst'),
               ),
@@ -182,11 +186,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
                   ),
                   child: Text(
                     _error!,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 13,
-                      color: AdminTheme.rose,
-                    ),
+                    style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: AdminTheme.rose),
                   ),
                 ),
               ],
@@ -202,14 +202,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               : Text(isCreate ? 'Crear usuario' : 'Guardar cambios'),
         ),
       ],

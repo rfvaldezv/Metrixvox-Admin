@@ -4,153 +4,87 @@ import 'package:metrixvox_admin/config/theme.dart';
 import 'package:metrixvox_admin/providers/auth_provider.dart';
 import 'package:metrixvox_admin/providers/tenant_provider.dart';
 
-/// Barra superior de la app con selector de tenant + usuario.
 class AdminTopbar extends StatelessWidget {
-  const AdminTopbar({super.key});
+  final GlobalKey<ScaffoldState>? scaffoldKey;
+
+  const AdminTopbar({super.key, this.scaffoldKey});
 
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
     final tenants = context.watch<TenantProvider>();
 
+    // Iniciales del usuario
+    String initials = 'U';
+    if (user != null && user.fullName.isNotEmpty) {
+      final parts = user.fullName.trim().split(' ');
+      if (parts.length > 1) {
+        initials = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+      } else {
+        initials = parts[0][0].toUpperCase();
+      }
+    }
+
     return Container(
-      height: 70,
+      height: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       color: Colors.white,
       child: Row(
         children: [
-          const SizedBox(width: 32),
-
-          // Título
-          const Text(
-            'Panel de Administración',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AdminTheme.dark,
+          // Si es móvil, mostramos el botón de hamburguesa
+          if (scaffoldKey != null) ...[
+            IconButton(
+              icon: const Icon(Icons.menu, color: AdminTheme.dark),
+              onPressed: () => scaffoldKey!.currentState?.openDrawer(),
             ),
-          ),
+            const SizedBox(width: 8),
+          ],
 
-          const SizedBox(width: 32),
-
-          // Selector de tenant (solo si hay tenants cargados)
-          if (tenants.tenants.isNotEmpty) const _TenantSelector(),
+          // Título (solo en PC)
+          if (scaffoldKey == null)
+            const Text(
+              'Panel de Administración',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AdminTheme.dark,
+              ),
+            ),
 
           const Spacer(),
 
-          // Notificaciones
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
-            tooltip: 'Notificaciones',
-            color: AdminTheme.gray,
-          ),
+          // Selector de tenant
+          if (tenants.tenants.isNotEmpty)
+            const _TenantSelector(),
 
-          const SizedBox(width: 8),
+          const SizedBox(width: 16),
 
-          // Usuario + menú
-          PopupMenuButton<String>(
-            offset: const Offset(0, 50),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: AdminTheme.indigo.withOpacity(0.15),
-                    child: Text(
-                      _initials(user?.fullName ?? '??'),
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AdminTheme.indigo,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    user?.fullName.split(' ').first ?? 'Usuario',
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AdminTheme.dark,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 18,
-                    color: AdminTheme.gray,
-                  ),
-                ],
+          // Perfil de usuario
+          PopupMenuButton(
+            icon: CircleAvatar(
+              backgroundColor: AdminTheme.indigo.withOpacity(0.1),
+              child: Text(
+                initials,
+                style: const TextStyle(color: AdminTheme.indigo, fontWeight: FontWeight.bold),
               ),
             ),
             itemBuilder: (context) => [
-              PopupMenuItem<String>(
-                enabled: false,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user?.fullName ?? '',
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AdminTheme.dark,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      user?.email ?? '',
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 11,
-                        color: AdminTheme.gray,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem<String>(
-                value: 'logout',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout, size: 18, color: AdminTheme.rose),
-                    SizedBox(width: 10),
-                    Text('Cerrar sesión'),
-                  ],
+              PopupMenuItem(
+                child: ListTile(
+                  leading: const Icon(Icons.logout, color: AdminTheme.rose),
+                  title: const Text('Cerrar sesión'),
+                  onTap: () => context.read<AuthProvider>().logout(),
                 ),
               ),
             ],
-            onSelected: (value) {
-              if (value == 'logout') {
-                context.read<AuthProvider>().logout();
-              }
-            },
           ),
-
-          const SizedBox(width: 16),
         ],
       ),
     );
   }
-
-  String _initials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.isEmpty) return '??';
-    if (parts.length == 1) return parts.first.substring(0, 2).toUpperCase();
-    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
-  }
 }
 
-/// Selector de tenant activo (dropdown en el topbar).
 class _TenantSelector extends StatelessWidget {
   const _TenantSelector();
 
@@ -158,65 +92,39 @@ class _TenantSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final tenants = context.watch<TenantProvider>();
     final selected = tenants.selected;
-
     if (selected == null) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: AdminTheme.lightGray,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AdminTheme.border),
       ),
-      child: Row(
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 12, right: 4),
-            child: Icon(
-              Icons.business_outlined,
-              size: 18,
-              color: AdminTheme.indigo,
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              'Cliente:',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AdminTheme.gray,
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: selected.tenantId,
+          icon: const Icon(Icons.keyboard_arrow_down, size: 20),
+          style: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: AdminTheme.dark),
+          items: tenants.tenants.map((t) {
+            return DropdownMenuItem(
+              value: t.tenantId,
+              child: Row(
+                children: [
+                  const Icon(Icons.business, size: 16, color: AdminTheme.gray),
+                  const SizedBox(width: 8),
+                  Text(t.name),
+                ],
               ),
-            ),
-          ),
-          DropdownButton<String>(
-            value: selected.tenantId,
-            underline: const SizedBox.shrink(),
-            borderRadius: BorderRadius.circular(10),
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            items: tenants.tenants
-                .map((t) => DropdownMenuItem<String>(
-                      value: t.tenantId,
-                      child: Text(
-                        t.name,
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AdminTheme.dark,
-                        ),
-                      ),
-                    ))
-                .toList(),
-            onChanged: (value) {
-              if (value == null) return;
-              final tenant =
-                  tenants.tenants.firstWhere((t) => t.tenantId == value);
-              context.read<TenantProvider>().selectTenant(tenant);
-            },
-          ),
-        ],
+            );
+          }).toList(),
+          onChanged: (val) {
+            if (val != null) {
+              final t = tenants.tenants.firstWhere((t) => t.tenantId == val);
+              tenants.selectTenant(t);
+            }
+          },
+        ),
       ),
     );
   }
